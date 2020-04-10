@@ -1,0 +1,69 @@
+version: '3.4'
+
+services:
+  tracingdotnetcore:
+    image: ${DOCKER_REGISTRY-}tracingdotnetcore
+    ports:
+     - "32773:80"
+    build:
+      context: .
+      dockerfile: TracingDotNetCore/Dockerfile
+    environment:
+     - TracingOptions__EnableOpenTracingAutoTracing=false
+     - TracingOptions__JaegerHost=jaeger
+     - TracingOptions__JaegerPort=6831
+     - ASPNETCORE_ENVIRONMENT=Development
+     - TracingOptions__TracerTarget=datadog
+     - JAEGER_AGENT_HOST=jaeger
+     - JAEGER_AGENT_PORT=6831
+     - JAEGER_SAMPLER_TYPE=const
+     - JAEGER_SAMPLER_PARAM=1
+     - JAEGER_REPORTER_LOG_SPANS=true
+     - CORECLR_PROFILER={846F5F1C-F9AE-4B07-969E-05C26BC060D8}
+     - CORECLR_PROFILER_PATH_64=/opt/datadog/Datadog.Trace.ClrProfiler.Native.so
+     - DD_INTEGRATIONS=/opt/datadog/integrations.json
+     - DD_DOTNET_TRACER_HOME=/opt/datadog
+     - CORECLR_ENABLE_PROFILING=1
+     - DD_TRACE_ANALYTICS_ENABLED=true
+     - DD_TRACE_ENABLED=true
+     - DD_LOGS_INJECTION=true
+     - DD_ENV=playground
+     - DD_AGENT_HOST=datadog
+     - DD_SERVICE_NAME=TracingDotNetCore
+     - DD_INTEGRATIONS_ENABLED=true
+     - DD_TRACE_DEBUG=true
+    networks:
+      - trace-example-network
+    depends_on:
+      - jaeger
+      - datadog
+
+  jaeger:
+    image: "jaegertracing/all-in-one:latest"
+    command: --log-level=debug
+    ports:
+      - "5775:5775/udp"
+      - "6831:6831/udp"
+      - "6832:6832/udp"
+      - "5778:5778"
+      - "16686:16686"
+      - "14268:14268"
+      - "9411:9411"
+    environment:
+     - "COLLECTOR_ZIPKIN_HTTP_PORT=9411"
+    networks:
+     - trace-example-network
+  datadog:
+    image: datadog/agent:7
+    networks:
+     - trace-example-network
+    environment:
+     - DD_API_KEY=APIKEY
+     - DD_APM_ENABLED=true
+     - DD_APM_NON_LOCAL_TRAFFIC=true
+    volumes:
+     - /var/run/docker.sock:/var/run/docker.sock
+     - /proc/:/host/proc/:ro
+     - /sys/fs/cgroup:/host/sys/fs/cgroup:ro
+networks:
+    trace-example-network:

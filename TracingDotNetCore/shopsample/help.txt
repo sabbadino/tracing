@@ -1,0 +1,40 @@
+docker network create gaworkshop
+
+start infrastructure first
+
+docker-compose up -d influxdb
+
+browse localhost:9999
+
+register with username/pwd (whatever)
+organization name: workshop
+initial bucket name: workshop
+
+click advanced -> tokens -> generate -> all access token
+
+description: workshop
+click on the workshop token and copy it
+
+open file .\infrastructure\telegraf.conf and copy token into 
+token = ".."
+
+open file .\infrastructure\jaeger\influxdb-plugin\config.yaml and copy token into 
+influxdb.token: ...
+
+docker-compose up -d telegraf
+
+docker-compose up
+
+
+
+cd apps
+docker-compose up -d frontend
+
+
+!! se non dovesse andare, provare a fare pulizia dei container
+docker rm $(docker ps -a -q)
+docker rm $(docker ps -a -q) --force
+
+!! se non dovesse andare, provare a fare pulizia delle immagini
+
+docker rmi $(docker images -a -q)
